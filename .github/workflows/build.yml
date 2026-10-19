@@ -1,0 +1,31 @@
+name: Gerar instaladores
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+defaults:
+  run:
+    working-directory: radar-cs-desktop
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radar-cs-${{ matrix.os }}
+          path: |
+            radar-cs-desktop/dist/*.exe
+            radar-cs-desktop/dist/*.dmg
