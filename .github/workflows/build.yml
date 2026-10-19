@@ -24,6 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - run: npm pkg set version=0.2.${{ github.run_number }}
       - run: npm install
       - run: npm run dist
         env:
@@ -34,4 +35,6 @@ jobs:
           name: Radar CS 0.2.${{ github.run_number }}
           files: |
             radar-cs-desktop/dist/*.exe
+            radar-cs-desktop/dist/*.exe.blockmap
+            radar-cs-desktop/dist/latest.yml
             radar-cs-desktop/dist/*.dmg
