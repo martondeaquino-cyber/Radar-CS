@@ -32,3 +32,13 @@ Programa de desktop (Windows e Mac) com o Radar CS dentro. Fica na barra do sist
 O programa confere, ao abrir e a cada 3 horas, se há uma versão nova da ferramenta em `radar-cs-desktop/app/` (arquivos `index.html` e `version.json`). Se houver, baixa, confere a integridade e pergunta se quer atualizar. Os dados não são tocados. Também dá para pedir pelo ícone da barra do sistema: **Verificar atualização agora**.
 
 Só mudanças na "casca" do programa (`main.js`, `updater.js`, `package.json`, pasta `build`) geram um instalador novo, automaticamente, em **Releases**.
+
+## Integrações reais
+
+Em **Integrações** (ou Configurações) você conecta:
+
+- **Asana**: token pessoal + link do projeto de CS. Tarefas criadas no Radar CS vão para o projeto e as do Asana aparecem aqui (sincroniza a cada 2 minutos).
+- **Claude (IA)**: chave da API da Anthropic. Gera atas a partir da transcrição, entende o Registro rápido e prepara reuniões.
+- **Google Agenda e Drive** (conta anaflavia.lumos@gmail.com): ID do cliente OAuth (tipo "App para computador") do Google Cloud. Eventos vão para o Google Agenda e as atas viram documentos na pasta "Radar CS · Atas".
+
+As chaves ficam criptografadas no computador (arquivo `integracoes.dat` na pasta de dados do programa). WhatsApp, Instagram/anúncios, Fathom e Discord ficam escondidos até terem conexão real.

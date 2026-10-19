@@ -2,6 +2,7 @@ const { app, BrowserWindow, Tray, Menu, shell, nativeImage, dialog, net } = requ
 const path = require('path');
 const fs = require('fs');
 const { createUpdater } = require('./updater');
+const { setupIntegrations } = require('./integrations');
 let autoUpdater = null;
 try { if (process.platform === 'win32') autoUpdater = require('electron-updater').autoUpdater; } catch (e) { autoUpdater = null; }
 
@@ -30,6 +31,7 @@ function createWindow() {
     icon: path.join(__dirname, 'build', 'tray.png'),
     webPreferences: {
       contextIsolation: true, nodeIntegration: false, sandbox: true,
+      preload: path.join(__dirname, 'preload.js'),
       backgroundThrottling: false   // gatilhos e relógios continuam rodando com a janela escondida
     }
   });
@@ -99,6 +101,7 @@ app.whenReady().then(() => {
     userDir: path.join(app.getPath('userData'), 'app'),
     fetchFn: (u) => net.fetch(u)
   });
+  setupIntegrations();
   createWindow(); buildTray();
   setupShellUpdater();
   setTimeout(() => checkUpdate(false), 8000);

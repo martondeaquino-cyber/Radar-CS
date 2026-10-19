@@ -18,6 +18,8 @@
     "files": [
       "main.js",
       "updater.js",
+      "integrations.js",
+      "preload.js",
       "app/**",
       "build/tray.png"
     ],
