@@ -1,6 +1,6 @@
 {
   "name": "radar-cs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Radar CS - gestão de Customer Success da Lumos",
   "author": "Ana Flavia",
   "main": "main.js",
@@ -15,7 +15,7 @@
   "build": {
     "appId": "com.lumos.radarcs",
     "productName": "Radar CS",
-    "files": ["main.js", "app/**", "build/tray.png"],
+    "files": ["main.js", "updater.js", "app/**", "build/tray.png"],
     "directories": { "buildResources": "build" },
     "win": { "target": "nsis", "icon": "build/icon.png" },
     "nsis": { "oneClick": true, "perMachine": false },

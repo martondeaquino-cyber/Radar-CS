@@ -26,3 +26,9 @@ Programa de desktop (Windows e Mac) com o Radar CS dentro. Fica na barra do sist
 ## Para desenvolvedores
 
 `npm install` e `npm start` rodam o programa; `npm run dist` gera o instalador do sistema atual.
+
+## Atualização automática
+
+O programa confere, ao abrir e a cada 3 horas, se há uma versão nova da ferramenta em `radar-cs-desktop/app/` (arquivos `index.html` e `version.json`). Se houver, baixa, confere a integridade e pergunta se quer atualizar. Os dados não são tocados. Também dá para pedir pelo ícone da barra do sistema: **Verificar atualização agora**.
+
+Só mudanças na "casca" do programa (`main.js`, `updater.js`, `package.json`, pasta `build`) geram um instalador novo, automaticamente, em **Releases**.
