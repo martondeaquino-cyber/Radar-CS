@@ -72,9 +72,12 @@ function setupShellUpdater() {
   });
   autoUpdater.on('update-not-available', () => { if (shellManual) { shellManual = false; dialog.showMessageBox({ type: 'info', message: 'Você já está na versão mais recente do programa' }); } });
   autoUpdater.on('error', (e) => { if (shellManual) { shellManual = false; dialog.showMessageBox({ type: 'warning', message: 'Não consegui verificar o programa agora', detail: String(e && e.message || e) }); } });
-  const go = () => { try { autoUpdater.checkForUpdates(); } catch (e) {} };
+  let last = 0;
+  const go = () => { last = Date.now(); try { autoUpdater.checkForUpdates(); } catch (e) {} };
   setTimeout(go, 20000);
-  setInterval(go, 3 * 60 * 60 * 1000);
+  // o relógio dos timers para quando o notebook dorme: confere de novo ao acordar e a cada 30 min se já passou da hora
+  setInterval(() => { if (Date.now() - last > 3 * 60 * 60 * 1000) go(); }, 30 * 60 * 1000);
+  try { require('electron').powerMonitor.on('resume', () => setTimeout(go, 15000)); } catch (e) {}
 }
 function checkShell() { if (autoUpdater && app.isPackaged) { shellManual = true; try { autoUpdater.checkForUpdates(); } catch (e) {} } }
 
@@ -105,7 +108,9 @@ app.whenReady().then(() => {
   createWindow(); buildTray();
   setupShellUpdater();
   setTimeout(() => checkUpdate(false), 8000);
-  setInterval(() => checkUpdate(false), 3 * 60 * 60 * 1000);
+  let lastTool = Date.now();
+  setInterval(() => { if (Date.now() - lastTool > 60 * 60 * 1000) { lastTool = Date.now(); checkUpdate(false); } }, 10 * 60 * 1000);
+  try { require('electron').powerMonitor.on('resume', () => setTimeout(() => { lastTool = Date.now(); checkUpdate(false); }, 10000)); } catch (e) {}
 });
 app.on('activate', showWin);
 app.on('before-quit', () => { quitting = true; });
