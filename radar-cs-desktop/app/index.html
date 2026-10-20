@@ -1686,6 +1686,15 @@ intCard=function(){return`<div class='card' style='margin-top:14px'><h2>Integra�
 setInterval(()=>{if(STO.ready&&IST.whatsapp.ok)waSync()},30*1000);
 istLoad().then(()=>R());
 
+
+/* ===== v17: mapa mental interativo das integrações com a situação real de cada conexão ===== */
+const MMI=[['Asana','asana'],['Google Calendar','google'],['Google Drive','google'],['Fathom','fathom'],['WhatsApp','whatsapp'],['Claude','claude'],['Instagram','']];
+function mmSync(){IN.length=0;MMI.forEach(([n,k])=>{const s=k?IST[k]||{}:{},er=k&&s.ok&&SYNC.err[k];IN.push([n,'',s.ok?(er?'Conectado · com erro':'Conectado'):(k?'Não conectado · clique para conectar':'Não conectado · ainda sem conexão disponível'),s.ok?(er?'wn':'ok'):'mt',0,0])})}
+mmOpen=function(k){if(k=='c')return;if(k[0]=='i'){const m=MMI.find(x=>'i'+x[0]==k);if(!m)return;if(m[1])intOpen(m[1]);else md(`<h2>Instagram</h2><p><span class='ist no'>Não conectado</span></p><p class='mu'>Ainda não existe uma conexão real com o Instagram e os anúncios no Radar CS. Quando existir, você conecta por aqui.</p><div class='fl'><button class='btn' onclick='cm()'>Fechar</button></div>`);return}const id=+k.slice(1),u=MMP.cus.find(y=>y.id==id);if(u)mmForm(u)};
+{const ah=afterHyd;afterHyd=function(){ah();if(MMP.pos){delete MMP.pos['iDiscord'];delete MMP.pos['iCRM de clientes']}MMP.cus.forEach(u=>{if(u.to=='iDiscord'||u.to=='iCRM de clientes')u.to='c'})}}
+V.integ=()=>{mmSync();return`<h1>Integrações</h1><p class='sub'>O que está conectado de verdade ao Radar CS. Clique em um bloco para conectar ou gerenciar.</p>${mmCard().replace('Clique em uma ferramenta para ver o que ela faria.','Clique em uma ferramenta para conectar ou ver a situação.')}${intCard()}${typeof gtCard=='function'?gtCard():''}`};
+mmSync();
+
 igChk(1);ap();
 D.forEach(d=>{d.s0=stOf(d)});
 setInterval(()=>{let ch=0;D.forEach(d=>{const s=stOf(d);if(s!=d.s0){if(['atr','crit'].includes(s)&&!['atr','crit'].includes(d.s0))push(d,1);d.s0=s;ch=1}});if(ch&&['entregas','painel','discord'].includes(S.v))return R();document.querySelectorAll('.cd[data-i]').forEach(e=>{const d=D.find(x=>x.id==e.dataset.i);if(d&&!d.done)e.textContent=fmt(d.due-Date.now())})},1000);
