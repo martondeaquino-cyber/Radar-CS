@@ -45,41 +45,105 @@ function projGid(u) {
   let m = u.match(/project\/(\d{6,})/) || u.match(/asana\.com\/0\/(\d{6,})/) || u.match(/(\d{10,})/);
   return m ? m[1] : null;
 }
+// Na Lumos as demandas entram no projeto [Lumos], seção "Entrada de tarefas", com o nome "[Cliente] descrição".
+const LUMOS_PROJ = '1210510753654250';
+let asUsers = null;
 const asana = {
-  async connect({ token, projeto }) {
+  async connect({ token }) {
     token = String(token || '').trim();
     if (!token) throw new Error('Cole o token pessoal do Asana');
-    const me = await jfetch(AS + '/users/me?opt_fields=name,email,workspaces.name', { headers: { Authorization: 'Bearer ' + token } });
-    const gid = projGid(projeto);
-    if (!gid) throw new Error('Não achei o número do projeto no link. Abra o projeto de CS no Asana e copie o link da barra de endereço.');
-    const p = await jfetch(AS + '/projects/' + gid + '?opt_fields=name,workspace.gid,permalink_url', { headers: { Authorization: 'Bearer ' + token } });
-    setSec('asana', { token, projeto: gid, nomeProjeto: p.data.name, ws: p.data.workspace.gid, user: me.data.name, email: me.data.email, link: p.data.permalink_url });
+    const H = { Authorization: 'Bearer ' + token };
+    const me = await jfetch(AS + '/users/me?opt_fields=name,email,workspaces.name', { headers: H });
+    const p = await jfetch(AS + '/projects/' + LUMOS_PROJ + '?opt_fields=name,workspace.gid,workspace.name,permalink_url', { headers: H })
+      .catch(() => { throw new Error('Este token não enxerga o projeto [Lumos]. Crie o token entrando no Asana com anaflavia.lumos@gmail.com.'); });
+    const secs = await jfetch(AS + '/projects/' + LUMOS_PROJ + '/sections?opt_fields=name', { headers: H });
+    const sec0 = (secs.data || []).find(x => /entrada de tarefas/i.test(x.name)) || (secs.data || [])[0];
+    setSec('asana', { token, projeto: LUMOS_PROJ, nomeProjeto: p.data.name, secao: sec0 && sec0.gid, nomeSecao: sec0 && sec0.name, ws: p.data.workspace.gid, nomeWs: p.data.workspace.name, user: me.data.name, email: me.data.email, me: me.data.gid, link: p.data.permalink_url });
+    asUsers = null;
     return asana.status();
   },
-  status() { const a = sec().asana; return a ? { ok: 1, user: a.user, email: a.email, projeto: a.nomeProjeto, link: a.link } : { ok: 0 }; },
-  async createTask({ name, notes, due_on }) {
+  status() { const a = sec().asana; return a && a.secao !== undefined ? { ok: 1, user: a.user, email: a.email, projeto: a.nomeProjeto, secao: a.nomeSecao, ws: a.nomeWs, link: a.link } : (a ? { ok: 0, refazer: 1 } : { ok: 0 }); },
+  async users() {
     const a = sec().asana; if (!a) throw new Error('Asana não conectado');
-    const data = { name: String(name || 'Tarefa').slice(0, 1000), notes: notes || '', projects: [a.projeto], assignee: 'me' };
+    if (asUsers) return asUsers;
+    let out = [], url = AS + '/workspaces/' + a.ws + '/users?limit=100&opt_fields=name,email';
+    for (let i = 0; i < 10 && url; i++) { const r = await jfetch(url, { headers: asH() }); out = out.concat(r.data); url = r.next_page && r.next_page.uri; }
+    asUsers = out.map(u => ({ gid: u.gid, name: u.name, email: u.email }));
+    return asUsers;
+  },
+  async _assignee(nome) {
+    const a = sec().asana; nome = String(nome || '').trim();
+    if (!nome || /^voc[êe]$/i.test(nome)) return a.me;
+    try {
+      const n = nome.toLowerCase(), L = await asana.users();
+      const u = L.find(x => (x.name || '').toLowerCase() === n) || L.find(x => (x.name || '').toLowerCase().startsWith(n)) || L.find(x => (x.name || '').toLowerCase().split(/\s+/)[0] === n.split(/\s+/)[0]);
+      return u ? u.gid : a.me;
+    } catch (e) { return a.me; }
+  },
+  async createTask({ name, notes, due_on, responsavel }) {
+    const a = sec().asana; if (!a || a.secao === undefined) throw new Error('Asana não conectado');
+    const data = { name: String(name || 'Demanda').slice(0, 1000), notes: notes || '', workspace: a.ws, assignee: await asana._assignee(responsavel),
+      memberships: [{ project: a.projeto, section: a.secao }] };
+    if (!a.secao) { delete data.memberships; data.projects = [a.projeto]; }
     if (due_on) data.due_on = due_on;
-    const r = await jfetch(AS + '/tasks?opt_fields=gid,permalink_url,name', { method: 'POST', headers: asH(), body: JSON.stringify({ data }) });
-    return { gid: r.data.gid, url: r.data.permalink_url };
+    const r = await jfetch(AS + '/tasks?opt_fields=gid,permalink_url,name,assignee.name', { method: 'POST', headers: asH(), body: JSON.stringify({ data }) });
+    return { gid: r.data.gid, url: r.data.permalink_url, who: r.data.assignee && r.data.assignee.name };
   },
   async complete({ gid, done }) {
     await jfetch(AS + '/tasks/' + gid, { method: 'PUT', headers: asH(), body: JSON.stringify({ data: { completed: done !== false } }) });
     return { ok: 1 };
   },
-  async list() {
-    const a = sec().asana; if (!a) throw new Error('Asana não conectado');
-    const since = new Date(Date.now() - 30 * 864e5).toISOString();
-    let out = [], url = AS + '/projects/' + a.projeto + '/tasks?limit=100&completed_since=' + encodeURIComponent(since) + '&opt_fields=name,completed,due_on,assignee.name,permalink_url,notes,modified_at';
-    for (let i = 0; i < 10 && url; i++) {
-      const r = await jfetch(url, { headers: asH() });
-      out = out.concat(r.data);
-      url = r.next_page && r.next_page.uri;
+  // tarefas atribuídas a você no Grupo Lumos (últimos 30 dias) + situação das que o Radar CS criou para outras pessoas
+  async list({ gids } = {}) {
+    const a = sec().asana; if (!a || a.secao === undefined) throw new Error('Asana não conectado');
+    const since = new Date(Date.now() - 30 * 864e5).toISOString(), F = 'name,completed,due_on,assignee.name,permalink_url,projects.name';
+    let out = [], url = AS + '/tasks?assignee=me&workspace=' + a.ws + '&limit=100&completed_since=' + encodeURIComponent(since) + '&opt_fields=' + F;
+    for (let i = 0; i < 10 && url; i++) { const r = await jfetch(url, { headers: asH() }); out = out.concat(r.data); url = r.next_page && r.next_page.uri; }
+    const have = new Set(out.map(t => t.gid));
+    for (const g of (gids || []).filter(g => !have.has(g)).slice(0, 40)) {
+      try { const r = await jfetch(AS + '/tasks/' + g + '?opt_fields=' + F, { headers: asH() }); out.push(r.data); } catch (e) { if (e.status === 404) out.push({ gid: g, gone: 1 }); }
     }
-    return out.map(t => ({ gid: t.gid, name: t.name, done: t.completed, due: t.due_on, who: t.assignee && t.assignee.name, url: t.permalink_url }));
+    return out.map(t => ({ gid: t.gid, gone: t.gone, name: t.name, done: t.completed, due: t.due_on, who: t.assignee && t.assignee.name, url: t.permalink_url, proj: (t.projects || []).map(p => p.name).join(', ') }));
   },
-  disconnect() { setSec('asana', null); return { ok: 0 }; }
+  disconnect() { setSec('asana', null); asUsers = null; return { ok: 0 }; }
+};
+
+/* ---------------- Fathom ---------------- */
+const FT = 'https://api.fathom.ai/external/v1';
+const fathom = {
+  async connect({ key }) {
+    key = String(key || '').trim(); if (!key) throw new Error('Cole a chave da API do Fathom');
+    await jfetch(FT + '/meetings', { headers: { 'X-Api-Key': key } });
+    setSec('fathom', { key });
+    return fathom.status();
+  },
+  status() { return sec().fathom ? { ok: 1 } : { ok: 0 }; },
+  async meetings({ after } = {}) {
+    const f = sec().fathom; if (!f) throw new Error('Fathom não conectado');
+    const H = { 'X-Api-Key': f.key };
+    const q = (full) => { const u = new URLSearchParams({ include_transcript: 'true' }); if (full) { u.set('include_summary', 'true'); u.set('include_action_items', 'true'); } if (after) u.set('created_after', new Date(after).toISOString()); return u; };
+    let full = true, out = [], cursor = null;
+    for (let i = 0; i < 5; i++) {
+      const u = q(full); if (cursor) u.set('cursor', cursor);
+      let r;
+      try { r = await jfetch(FT + '/meetings?' + u, { headers: H }); }
+      catch (e) { if (e.status === 400 && full) { full = false; i--; continue; } throw e; }
+      out = out.concat(r.items || r.meetings || r.data || []);
+      cursor = r.next_cursor; if (!cursor) break;
+    }
+    return out.map(m => ({
+      id: String(m.recording_id || m.id || m.share_url || m.url || m.created_at),
+      titulo: m.title || m.meeting_title || 'Reunião',
+      t: Date.parse(m.recording_start_time || m.scheduled_start_time || m.created_at),
+      url: m.share_url || m.url || '',
+      convidados: (m.calendar_invitees || []).map(x => x.name || x.email).filter(Boolean),
+      externos: (m.calendar_invitees || []).filter(x => x.is_external).map(x => x.name || x.email).filter(Boolean),
+      resumo: (m.default_summary && m.default_summary.markdown_formatted) || '',
+      acoes: (m.action_items || []).map(x => ({ t: x.description, quem: x.assignee && x.assignee.name || '', feito: !!x.completed })),
+      transcricao: (m.transcript || []).map(s => (s.timestamp ? '[' + s.timestamp + '] ' : '') + ((s.speaker && s.speaker.display_name) || '') + ': ' + s.text).join('\n').slice(0, 200000)
+    }));
+  },
+  disconnect() { setSec('fathom', null); return { ok: 0 }; }
 };
 
 /* ---------------- Claude (API da Anthropic) ---------------- */
@@ -202,11 +266,13 @@ const google = {
   disconnect() { const g = sec().google; setSec('google', g ? { clientId: g.clientId, clientSecret: g.clientSecret } : null); gTok = null; return google.status(); }
 };
 
-const SV = { asana, claude, google };
+const { whatsapp } = require('./whatsapp');
+const SV = { asana, claude, google, fathom, whatsapp };
 function setupIntegrations() {
+  setTimeout(() => { try { whatsapp.startIfOn(); } catch (e) {} }, 5000);
   ipcMain.handle('rcs', async (_e, svc, op, args) => {
     try {
-      if (svc === 'all' && op === 'status') return { ok: true, data: { asana: asana.status(), claude: claude.status(), google: google.status(), v: 1 } };
+      if (svc === 'all' && op === 'status') return { ok: true, data: { asana: asana.status(), claude: claude.status(), google: google.status(), fathom: fathom.status(), whatsapp: whatsapp.status(), v: 2 } };
       if (svc === 'open' && /^https:\/\//.test(String(args && args.url))) { shell.openExternal(args.url); return { ok: true }; }
       const s = SV[svc];
       if (!s || op.startsWith('_') || typeof s[op] !== 'function') throw new Error('operação desconhecida');

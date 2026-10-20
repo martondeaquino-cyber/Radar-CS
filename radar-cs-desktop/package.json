@@ -20,6 +20,7 @@
       "updater.js",
       "integrations.js",
       "preload.js",
+      "whatsapp.js",
       "app/**",
       "build/tray.png"
     ],

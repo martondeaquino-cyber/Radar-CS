@@ -37,8 +37,10 @@ Só mudanças na "casca" do programa (`main.js`, `updater.js`, `package.json`, p
 
 Em **Integrações** (ou Configurações) você conecta:
 
-- **Asana**: token pessoal + link do projeto de CS. Tarefas criadas no Radar CS vão para o projeto e as do Asana aparecem aqui (sincroniza a cada 2 minutos).
+- **Asana**: token pessoal (conta anaflavia.lumos@gmail.com). As demandas entram em [Lumos] › Entrada de tarefas como "[Cliente] descrição", com o responsável atribuído; as suas tarefas do Grupo Lumos aparecem no Radar CS (sincroniza a cada 2 minutos).
+- **Fathom**: chave da API. As reuniões gravadas aparecem no Conversor (resumo, itens de ação e transcrição) e os links vão para Reuniões › Links do Fathom.
+- **WhatsApp Business**: o WhatsApp Web abre numa janela do próprio Radar CS (QR code uma vez). Somente leitura e só conversas com a etiqueta LUMOS; nunca envia mensagens. Não é conexão oficial da Meta.
 - **Claude (IA)**: chave da API da Anthropic. Gera atas a partir da transcrição, entende o Registro rápido e prepara reuniões.
 - **Google Agenda e Drive** (conta anaflavia.lumos@gmail.com): ID do cliente OAuth (tipo "App para computador") do Google Cloud. Eventos vão para o Google Agenda e as atas viram documentos na pasta "Radar CS · Atas".
 
-As chaves ficam criptografadas no computador (arquivo `integracoes.dat` na pasta de dados do programa). WhatsApp, Instagram/anúncios, Fathom e Discord ficam escondidos até terem conexão real.
+As chaves ficam criptografadas no computador (arquivo `integracoes.dat` na pasta de dados do programa). Instagram/anúncios e Discord ficam escondidos até terem conexão real.
