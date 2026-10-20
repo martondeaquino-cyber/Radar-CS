@@ -33,12 +33,14 @@
     },
     "nsis": {
       "oneClick": true,
-      "perMachine": false
+      "perMachine": false,
+      "artifactName": "Radar-CS-Setup-${version}.${ext}"
     },
     "mac": {
       "target": "dmg",
       "icon": "build/icon.png",
-      "category": "public.app-category.business"
+      "category": "public.app-category.business",
+      "artifactName": "Radar-CS-${version}-${arch}.${ext}"
     },
     "publish": [
       {
