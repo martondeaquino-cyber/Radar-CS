@@ -272,7 +272,7 @@ function setupIntegrations() {
   setTimeout(() => { try { whatsapp.startIfOn(); } catch (e) {} }, 5000);
   ipcMain.handle('rcs', async (_e, svc, op, args) => {
     try {
-      if (svc === 'all' && op === 'status') return { ok: true, data: { asana: asana.status(), claude: claude.status(), google: google.status(), fathom: fathom.status(), whatsapp: whatsapp.status(), v: 2 } };
+      if (svc === 'all' && op === 'status') return { ok: true, data: { asana: asana.status(), claude: claude.status(), google: google.status(), fathom: fathom.status(), whatsapp: whatsapp.status(), v: 3 } };
       if (svc === 'open' && /^https:\/\//.test(String(args && args.url))) { shell.openExternal(args.url); return { ok: true }; }
       const s = SV[svc];
       if (!s || op.startsWith('_') || typeof s[op] !== 'function') throw new Error('operação desconhecida');

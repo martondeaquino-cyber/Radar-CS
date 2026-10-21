@@ -32,11 +32,21 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true, nodeIntegration: false, sandbox: true,
       preload: path.join(__dirname, 'preload.js'),
+      webviewTag: true,   // aba Claude: a conversa de atualização aberta dentro do Radar CS
       backgroundThrottling: false   // gatilhos e relógios continuam rodando com a janela escondida
     }
   });
   // sempre o mesmo caminho: assim os dados guardados continuam valendo depois de cada atualização
   win.loadFile(updater.ensureLocal());
+  // só deixa abrir o claude.ai dentro da aba Claude, sem acesso ao computador
+  win.webContents.on('will-attach-webview', (e, wp, params) => {
+    delete wp.preload; wp.nodeIntegration = false; wp.contextIsolation = true; wp.sandbox = true;
+    if (!/^https:\/\/claude\.ai\//.test(params.src || '') || params.partition !== 'persist:claude') e.preventDefault();
+  });
+  app.on('web-contents-created', (_e, wc) => {
+    if (wc.getType() !== 'webview') return;
+    wc.setWindowOpenHandler(({ url }) => { if (/^https:\/\/(claude\.ai|accounts\.google\.com)\//.test(url)) return { action: 'allow' }; if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+  });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); } });
   win.on('close', (e) => { if (!quitting) { e.preventDefault(); win.hide(); } });
