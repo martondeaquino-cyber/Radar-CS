@@ -172,7 +172,7 @@ const claude = {
 };
 
 /* ---------------- Google (Agenda e Drive) ---------------- */
-const G_SCOPES = ['openid', 'email', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/drive.file'];
+const G_SCOPES = ['openid', 'email', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly'];
 const b64u = (b) => b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 let gTok = null; // { access, exp }
 async function gAccess() {
@@ -262,6 +262,21 @@ const google = {
     const h = await gH(); h['Content-Type'] = 'multipart/related; boundary=' + bnd;
     const r = await jfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', { method: 'POST', headers: h, body });
     return { id: r.id, url: r.webViewLink, pasta: sec().google.pastaLink };
+  },
+  // Biblioteca: nome de um arquivo/pasta e lista do que tem dentro de uma pasta (só leitura dos nomes e links)
+  async driveGet({ id }) {
+    const r = await jfetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?supportsAllDrives=true&fields=id,name,mimeType,webViewLink', { headers: await gH() });
+    return { id: r.id, name: r.name, mime: r.mimeType, url: r.webViewLink };
+  },
+  async driveList({ folderId }) {
+    let out = [], token = '';
+    for (let i = 0; i < 10; i++) {
+      const q = new URLSearchParams({ q: "'" + String(folderId).replace(/'/g, '') + "' in parents and trashed=false", fields: 'nextPageToken,files(id,name,mimeType,webViewLink,modifiedTime)', pageSize: '200', orderBy: 'folder,name', supportsAllDrives: 'true', includeItemsFromAllDrives: 'true' });
+      if (token) q.set('pageToken', token);
+      const r = await jfetch('https://www.googleapis.com/drive/v3/files?' + q, { headers: await gH() });
+      out = out.concat(r.files || []); token = r.nextPageToken; if (!token) break;
+    }
+    return out.map(f => ({ id: f.id, name: f.name, mime: f.mimeType, url: f.webViewLink, mod: f.modifiedTime }));
   },
   disconnect() { const g = sec().google; setSec('google', g ? { clientId: g.clientId, clientSecret: g.clientSecret } : null); gTok = null; return google.status(); }
 };
