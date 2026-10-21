@@ -1783,6 +1783,18 @@ V.biblioteca=()=>{const g=IST.google&&IST.google.ok,F=LIB.items.filter(x=>x.kind
  <div class='card' style='margin-top:14px'><h2>Documentos soltos <span class='mu' style='font-weight:400;font-size:13px'>${D.length}</span></h2><div style='margin-top:8px'>${docs||`<p class='mu'>Nenhum documento solto ainda. Cole o link de um documento acima.</p>`}</div></div>`};
 document.head.insertAdjacentHTML('beforeend',`<style>.libf{border:1px solid var(--ln,#e4e6ea);border-radius:12px;margin:8px 0;overflow:hidden}.libf.on{box-shadow:0 2px 10px rgba(0,0,0,.05)}.libh{background:var(--sf,#fff)}.libk{border-top:1px solid var(--ln,#e4e6ea);background:color-mix(in srgb,var(--ln,#e4e6ea) 25%,transparent)}.libr2{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--ln,#e4e6ea)}.libk .libr2:last-child,.libr2:last-child{border-bottom:0}.libn{display:flex;align-items:center;gap:10px;min-width:0;flex:1;background:none;border:0;padding:4px 0;text-align:left;color:inherit;text-decoration:none;cursor:pointer;font:inherit}.libn small{display:block;color:var(--mu,#5b6375)}.libn:hover b{text-decoration:underline}.libch{width:14px;color:var(--mu,#5b6375);flex:none}.libe{padding:10px 14px;color:var(--mu,#5b6375);font-size:13px}</style>`);
 
+
+/* ===== v20: Plano de ação com as cores e o tema (claro/escuro) do Radar CS; "Não conectado" mais legível ===== */
+function todoTheme(){const f=document.querySelector('#xtodo iframe');if(!f)return;let d;try{d=f.contentDocument}catch(e){return}if(!d||!d.documentElement)return;
+ const c=getComputedStyle(document.documentElement),v=n=>c.getPropertyValue(n).trim(),dark=document.documentElement.dataset.theme=='dark',r=d.documentElement;
+ const M={'--bg':v('--bg'),'--surface':v('--sf'),'--sunk':`color-mix(in srgb,${v('--ln')} 55%,${v('--sf')})`,'--ink':v('--ink'),'--muted':v('--mu'),'--line':v('--ln'),'--accent':v('--ac'),'--accent-ink':v('--acx')||'#fff','--hl':v('--acs'),'--good':v('--ok'),'--good-bg':v('--okb'),'--warn':v('--wn'),'--warn-bg':v('--wnb'),'--bad':v('--bad'),'--bad-bg':v('--badb'),'--mix':dark?'28%':'20%','--f-display':'Manrope,system-ui,sans-serif','--f-body':'Manrope,system-ui,sans-serif'};
+ Object.entries(M).forEach(([k,x])=>{if(x)r.style.setProperty(k,x)});r.dataset.theme=dark?'dark':'light';r.style.colorScheme=dark?'dark':'light';
+ if(!d.getElementById('rcsfont')){const l=d.createElement('link');l.id='rcsfont';l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap';d.head.appendChild(l)}}
+{const ti=todoInit;todoInit=function(){ti();const f=document.querySelector('#xtodo iframe');if(f&&!f.dataset.th){f.dataset.th=1;f.addEventListener('load',todoTheme)}todoTheme()}}
+{const ap0=ap;ap=function(){ap0();try{todoTheme()}catch(e){}}}
+{const R7=R;R=function(){R7();try{todoTheme()}catch(e){}}}
+document.head.insertAdjacentHTML('beforeend',`<style>.ist.no{background:color-mix(in srgb,var(--mu) 18%,transparent)!important;color:var(--ink)!important;font-weight:600}.mmn small{font-size:max(12px,.86em)!important;line-height:1.3}.mmn small[style*="--mu"]{color:var(--ink)!important;font-weight:600;opacity:.85}</style>`);
+
 igChk(1);ap();
 D.forEach(d=>{d.s0=stOf(d)});
 setInterval(()=>{let ch=0;D.forEach(d=>{const s=stOf(d);if(s!=d.s0){if(['atr','crit'].includes(s)&&!['atr','crit'].includes(d.s0))push(d,1);d.s0=s;ch=1}});if(ch&&['entregas','painel','discord'].includes(S.v))return R();document.querySelectorAll('.cd[data-i]').forEach(e=>{const d=D.find(x=>x.id==e.dataset.i);if(d&&!d.done)e.textContent=fmt(d.due-Date.now())})},1000);
